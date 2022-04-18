@@ -1,0 +1,11 @@
+*.pdf
+*.zip
+*.xls
+*.ods
+Luis_Miguel_Guirado_Bautista
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.toc
+*.synctex.gz

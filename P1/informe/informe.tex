@@ -1,0 +1,294 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc} % UTF-8
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{algpseudocode} % Algoritmos
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage{graphicx} % Figuras e imagenes
+\usepackage{multirow} % Combinacion de celdas en tablas
+\usepackage{algorithmicx}
+\usepackage{fancyhdr} % Cabeceras y pies de pagina
+\usepackage{blindtext} % lorem ipsum dolor...
+\graphicspath{ {images/} } % Ruta a las imagenes
+
+\title{Práctica 1 - Técnicas de Búsqueda Local y Algoritmos Greedy para el Problema de la Mínima Dispersión Diferencial}
+\author{Luis Miguel Guirado Bautista}
+\date{10 de Abril de 2022 \qquad Curso 2021/2022}
+
+\pagestyle{fancy}
+\fancyhf{}
+
+% do-while en algoritmos
+\algdef{SE}[DOWHILE]{Do}{doWhile}{\algorithmicdo}[1]{\algorithmicwhile\ #1}%
+
+\renewcommand*\contentsname{Índice} % Nombre del indice
+\renewcommand{\figurename}{Figura} % Nombre de una figura
+\renewcommand{\partname}{Ejercicio} % Nombre de \part
+\renewcommand{\familydefault}{\sfdefault}
+
+\begin{document}
+
+    \begin{titlepage}
+        \maketitle
+        \thispagestyle{empty}
+        \begin{enumerate}
+            \item[\textbf{Correo:}]luismgb@correo.ugr.es
+            \item[\textbf{DNI:}]75942712R
+            \item[\textbf{Subgrupo:}]Martes, 3
+            \item[\textbf{Problema:}]A (MDD) 
+        \end{enumerate}
+    \end{titlepage}
+
+    \pagebreak
+
+    \lhead{Práctica 1 - Metaheurísticas}
+    \rhead{Luis Miguel Guirado Bautista}
+    \tableofcontents
+
+    \pagebreak
+    \rfoot{\thepage}
+    \section{Motivación}
+
+    En esta práctica abordaremos el problema de la Mínima Dispersión Diferencial (MDD), que consiste en
+    seleccionar un conjunto de $m$ elementos $M$ t.q $M \subset N$ y $m < n$, cuya dispersión entre sus
+    elementos sea mínima, de modo que puede tratarse como un problema de optimización.
+
+    \vspace*{0.1in}
+    La dispersión de un elemento $v$ de la selección se interpreta como la suma de las distancias de
+    $v$ al resto de puntos de $M$.
+
+    \begin{equation*}
+        \Delta(v) = \sum_{v \in M}d_{vu}
+    \end{equation*}
+
+    La dispersión de una solución $M$ se define como la diferencia entre los valores extremos de las
+    dispersiones de los puntos de $M$.
+
+    \begin{equation*}
+        \Delta(M) = max_{v \in M}(u) - min_{u \in M}(v)
+    \end{equation*}
+
+    Siendo $\mathbb{M}$ el conjunto de posibles soluciones, podemos denotar la solución óptima $M^*$ como:
+
+    \begin{equation*}
+        M^* = min_{M \in \mathbb{M}}(\Delta(M))
+    \end{equation*}
+
+    Para solucionar de forma práctica este tipo de problemas usaremos 50 ficheros de datos generados por
+    Glover, Kuo y Dhir en 1998 (GKD). Cada uno de estos ficheros son casos de problemas, con unos valores
+    de $n$ y $m$ predefinidos, y la matriz diagonal superior de distancias euclídeas de cada uno de los
+    puntos de $N$. Podemos recoger los datos de estos ficheros y representarlos de la siguiente manera.
+
+    \begin{equation*}
+        I_{nm} =
+        \begin{pmatrix}
+            0 & d_{01} & d_{02} & \dots & d_{0n} \\
+            0 & 0 & d_{12} & \dots & d_{1_n} \\
+            \vdots & \vdots & \vdots & \ddots & \vdots \\
+            0 & 0 & 0 & \dots & d_{nn} \\
+        \end{pmatrix}
+    \end{equation*}
+
+    \paragraph*{\textbf{Nota:}}Por simplicidad, el programa convertirá la matriz diagonal superior a una matriz diagonal superior e inferior.
+
+    \vspace*{0.1in}
+    También haremos uso de dos algoritmos implementados por el estudiante:
+    \begin{itemize}
+        \item Greedy
+        \item Búsqueda Local
+    \end{itemize}
+
+    Finalmente haremos un análisis en base a los algoritmos empleados, el tamaño de los casos y el coste y tiempo medios.
+
+    \pagebreak
+
+    \section{Algoritmos}
+
+    \subsection{Greedy}
+
+    Consiste en seleccionar el siguiente elemento de la solución que minimice la dispersión con respecto a la
+    solución actual. El primer elemento es aleatorio ya que $M = \emptyset$, y a partir de ahí se van escogiendo
+    los elementos siguiendo el siguiente criterio.
+
+    Para cada $u \notin M$:
+
+    \begin{equation*}
+        \partial (u) = \sum_{v \in M}d_{uv}
+    \end{equation*}
+
+    Y para cada $v \in M$, siendo $anterior(v)$ la distancia entre los puntos de $M$:
+
+    \begin{equation*}
+        \partial (v) = anterior(v)+d_{uv}
+    \end{equation*}
+
+    Entonces, siendo:
+
+    \begin{equation*}
+        \partial_{max}(u) = max(\partial (u), max_{v \in M}\partial (v))
+    \end{equation*}
+
+    \begin{equation*}
+        \partial_{min}(u) = min(\partial (u), min_{v \in M}\partial (v))
+    \end{equation*}
+
+    La dispersión del siguiente punto $u$ será:
+
+    \begin{equation*}
+        g(u) = \partial_{max}(u) - \partial_{min}(u)
+    \end{equation*}
+
+    \begin{algorithmic}
+        \Function{Greedy-MDD}{$distancias$, $N$, $m$}
+            \State{$actual \gets \texttt{Aleatorio($N$)}$}
+            \State{$s \gets [actual]$ \Comment{Lista de elementos pertenecientes a $N$}}
+            \State{$disp \gets 0$}
+            \While{$s.size < m$}
+                \State{$(actual, disp) \gets \texttt{EscogerElemento($distancias$, $s$)}$} \Comment{Heurística empleada}
+                \State{$s \gets s \cup actual$ \Comment{Se añade $actual$ a $s$}}
+            \EndWhile
+            \State{\Return{$(s$, $disp)$}}
+        \EndFunction
+    \end{algorithmic}
+    \pagebreak
+    \begin{algorithmic}
+        \Function{EscogerElemento}{$distancias$, $s$}
+        \State{$mejor \gets -$}
+        \State{$min_g \gets \infty$}
+        \For{$u \notin s$} \Comment{Para cada elemento no seleccionado}
+            \State{$\partial(u) \gets \sum_{v \in s}distancias[u,v]$}
+            \For{$v \in s$} \Comment{Para cada elemento seleccionado}
+                \State{$\partial(v) \gets distancia(s) + distancias[u,v]$}
+            \EndFor
+        \State{$\partial_{max} \gets max(\partial (u), max_{v \in s}(\partial(v)))$}
+        \State{$\partial_{min} \gets min(\partial (u), min_{v \in s}(\partial(v)))$}
+        \If{$\partial_{max} - \partial_{min} < min_g$} \Comment{Nos quedamos con el de menor dispersión}
+            \State{$mejor \gets u$}
+            \State{$min_g \gets \partial_{max} - \partial_{min}$}
+        \EndIf
+        \EndFor
+        \State{\Return{$mejor$, $min\_g$}}
+        \EndFunction
+    \end{algorithmic}
+
+    \subsection{Búsqueda Local}
+
+    Dada una solución completamente aleatoria $M$, consiste en ir generando soluciones vecinas que mejoren
+    el resultado de la solución original $M$ dentro de un entorno $E(M)$, hasta que, generado todo el entorno de
+    una solución, no se haya encontrado una mejora o se haya alcanzado un número máximo de iteraciones definida por
+    el programador (en este caso, el máximo de iteraciones será de $10^5$).
+    
+    Este algoritmo requiere definir el
+    $E(M)$ y un operador que genere una solución vecina a $M$ dentro de su entorno.
+    Para ello, definiremos el método \texttt{Int(M,i,j)}, que se encargará de intercambiar un elemento $i \in M$ por
+    otro $j \notin M$ para que quede una solución vecina $M'$ t.q. $i \notin M'$ y $j \in M'$.
+
+    Entonces es fácil deducir que el entorno de $M$ son todas las soluciones vecinas $M'$ que puede generar
+    el operador \texttt{Int(M,i,j)}, que son $m \cdot (n-m)$ vecinos. No obstante, el entorno puede llegar a ser muy grande,
+    así que realizaremos una factorización del coste para cada vecino que consideremos para aumentar la eficiencia.
+
+    El coste de realizar un intercambio es:
+    
+    \begin{equation*}
+        Z_{mm}(M,i,j) = (\partial_{max} - \partial_{min}) - Z_{mm}(M) = Z_{mm}(M') - Z_{mm}(M)
+    \end{equation*}
+
+    \begin{equation*}
+        \partial_{max} = max(\partial (v), max_{w \in M}(\partial (w)))
+    \end{equation*}
+
+    \begin{equation*}
+        \partial_{min} = min(\partial (v), min_{w \in M}(\partial (w)))
+    \end{equation*}
+
+    Para todo elemento $v$:
+    \begin{equation*}
+        \partial (v) = \sum_{w \in M}d_{vw}
+    \end{equation*}
+
+    Luego para todo elemento $w \in M$, siendo $anterior(w)$ el coste de $M$:
+    \begin{equation*}
+        \partial (w) = anterior(w) - d_{wu} + d_{wv}
+    \end{equation*}
+
+    El algoritmo de búsqueda local escogerá al vecino como buena solución si $Z_{mm}(M,i,j) < 0$, es decir, si al
+    realizar el intercambio, se ha producido una mejora en cuanto al coste con respecto a la solución original.
+
+    \pagebreak
+
+    \begin{algorithmic}
+        \Function{BúsquedaLocal}{$distancias$, $N$, $m$, $max\_iters$}
+            \State{$actual \gets \texttt{GenerarSolucion($N$,$m$)}$}
+            \State{$iters \gets 0$}
+            \Do
+                \State{$iters \gets iters + 1$}
+                \State{$prima \gets \texttt{EscogerVecino($distancias$, $actual$, $N$)}$}
+                \If{$\texttt{Distancia($prima$)} < \texttt{Distancia($actual$)}$}
+                    \State{$actual \gets prima$}
+                \EndIf
+            \doWhile{$iters \geq max\_iters$ \textbf{or} $\texttt{Distancia($prima$)} \geq \texttt{Distancia($actual$)}$}
+            \State{\Return{$actual$, $\texttt{Distancia($actual$)}$}}
+        \EndFunction
+    \end{algorithmic}
+    \vspace*{0.2in}
+    \begin{algorithmic}
+        \Function{EscogerVecino}{$distancias$, $actual$, $N$}
+            \For{$u \in actual$}
+                \For{$v \notin actual$}
+                    \State{$M' \gets \texttt{Int($actual, u, v$)}$} \Comment{Operador de intercambio}
+                    \State{$\partial (v) \gets \sum_{w \in M'}d_{vw}$}
+                    \For{$w \in M'$}
+                        \State{$\partial (w) \gets \texttt{Distancia($actual$)} - d_{wu} + d_{wv}$}
+                    \EndFor
+                    \State{$\partial_{max} \gets max(\partial (v), max_{w \in M'}( \partial (w)))$}
+                    \State{$\partial_{min} \gets min(\partial (v), min_{w \in M'}( \partial (w)))$}
+                    \State{$Z_{mm}(M') \gets \partial_{max} - \partial_{min}$}
+                    \State{$Z_{mm}(M,u,v) \gets Z_{mm}(M') - Z_{mm}(M)$}
+                    \If{$Z_{mm}(M,u,v) < 0$}
+                        \State{\Return{$M', Z_{mm}(M')$}}
+                    \EndIf
+                \EndFor
+            \EndFor
+            \State{\Return{$M'$}}
+        \EndFunction
+    \end{algorithmic}
+    \vspace*{0.2in}
+
+    \pagebreak
+
+    \section{Desarrollo}
+
+    La práctica se ha realizado en Python 3.10.2, haciendo uso de los paquetes \texttt{time},
+    \texttt{NumPy}, \texttt{os}, \texttt{Pandas} y \texttt{random}. No se ha utilizado ningún framework.
+    \begin{enumerate}
+        \item[]Para la generación de la semilla se ha usado la distribución uniforme discreta de \texttt{NumPy}
+        a partir del método \texttt{randint}.
+        \item[]Para la lectura de los ficheros de datos GKD se ha usado el método \texttt{listdir} de \texttt{os}.
+        y para su organización se han usado las estructuras de datos \texttt{array} de \texttt{NumPy}.
+        \item[]Para la medición de tiempos se ha usado el paquete \texttt{time}.
+        \item[]Para la gestión de datos en los algoritmos, además de las estructuras de datos primitivas de 
+        Python como \texttt{list}, \texttt{tuple}, o \texttt{dict}, se ha usado la estructura de datos \texttt{array}.
+        de \texttt{NumPy} y varios de sus métodos como \texttt{sum, zeros, shape (atributo)},...
+        \item[]Para la generación de las tablas de las que se hablará posteriormente se ha usado el paquete \texttt{Pandas}.
+    \end{enumerate}
+
+    \section{Análisis}
+
+    Una instancia de ejecución de todo el experimento (5 ejecuciones de cada caso con cada uno de los algoritmos),
+    se encuentra en el archivo \texttt{Tablas\_MDD\_2021-22.ods}. No obstante, al ejecutar el programa, siempre genera
+    una tabla del mismo formato (salvo tablas finales, no son válidas). Basta con ejecutar el archivo mediante cualquier
+    intérprete, aunque es necesario tener los archivos GKD en el directorio \texttt{/datos/p1a/} y tener instalados los paquetes mencionados
+    en la sección de desarrollo.
+
+    \paragraph*{\textbf{Conclusión en base a los resultados}}
+    \emph{
+        Aquí seré algo informal. Esta práctica ha sido un desastre, me ha costado muchas veces más entender las
+        heurísticas que todo lo demás junto (implementación del algoritmo general, realización del informe y tablas, etc.)
+        y no ha sido por falta de tiempo, sino por que "no daba en el clavo". De ahí, los resultados que comentaré a continuación.
+        Aunque he estado observando los resultados y los tiempos bajan en Greedy según n, pero sobretodo por m, ya que escoge los elementos de
+        forma secuencial, y cuanto más elementos tenga que analizar y escoger, obviamente, más tardará. Aunque BL tiene un error de
+        implementación que se basa en el tiempo, los tiempos son más uniformes y tardan muchísimo menos que en Greedy.
+        Y el error más grave que he tenido es la desviación media en BL, siendo mayor que $2\cdot 10^5$.
+    }
+
+\end{document}
