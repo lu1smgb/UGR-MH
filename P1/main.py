@@ -195,7 +195,7 @@ def main():
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     # Directorio padre de los casos a evaluar
-    data_dir = 'datos/p1a/'
+    data_dir = 'datos/'
     ficheros = listdir(data_dir)
 
     # Ordena los ficheros segun el orden de b (en el nombre del fichero)
