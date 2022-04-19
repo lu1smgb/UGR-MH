@@ -163,14 +163,15 @@ def busqueda_local(data: np.array, m: int):
 
     inicio = time.time()
 
-    MAX_ITERS = 100000
+    MAX_ITERS = 100_000
 
     n = data.shape[0]
     actual = generar_sel(n, m)
     dist_actual = distancia_sel(data, actual)
+    dist_prima = 0
     iters = 0
 
-    while True:
+    while iters >= MAX_ITERS or dist_prima >= dist_actual:
 
         iters += 1
 
@@ -180,11 +181,10 @@ def busqueda_local(data: np.array, m: int):
             actual = prima
             dist_actual = dist_prima
             continue
-
-        if iters >= MAX_ITERS or dist_prima >= dist_actual:
-            fin = time.time()
-            tiempo = fin - inicio
-            return actual, dist_actual, tiempo
+    
+    fin = time.time()
+    tiempo = fin - inicio
+    return actual, dist_actual, tiempo
 
 # ************************************************************************
 
