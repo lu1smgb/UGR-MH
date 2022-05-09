@@ -171,7 +171,7 @@ def busqueda_local(data: np.array, m: int):
     dist_prima = 0
     iters = 0
 
-    while iters >= MAX_ITERS or dist_prima >= dist_actual:
+    while iters < MAX_ITERS or dist_prima >= dist_actual:
 
         iters += 1
 
