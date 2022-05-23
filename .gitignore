@@ -11,3 +11,4 @@ Luis_Miguel_Guirado_Bautista
 __pycache__
 .vscode
 !informe.pdf
+*.pdf
